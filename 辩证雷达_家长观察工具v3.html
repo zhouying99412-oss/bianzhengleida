@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>辩证雷达 — 家长观察工具</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500;600&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#F7F5F0;--card:#FFFFFF;--text:#2A2826;--muted:#8A8680;--border:#E4E0D6;
+  --warm:#C8500A;--cool:#1A7A5E;--blue:#3A7FC1;
+  --intervention:#4891C7;--cooperation:#5DAA68;--expression:#E8A838;
+  --abstraction:#1D9E75;--creativity:#D85A30;--reflection:#8B6BB5;
+  --step-inactive:#E4E0D6;--step-active:#2A2826;
+}
+body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;min-height:100vh}
+
+/* HERO */
+.hero{text-align:center;padding:2.5rem 1.5rem 1.5rem;background:#fff;border-bottom:1px solid var(--border)}
+.hero-tag{display:inline-block;font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);border:1px solid var(--border);padding:3px 12px;border-radius:20px;margin-bottom:0.8rem}
+.hero h1{font-family:'Noto Serif SC',serif;font-size:clamp(1.8rem,5vw,2.6rem);font-weight:700;letter-spacing:0.1em;margin-bottom:0.3rem}
+.hero .subtitle{font-size:0.88rem;color:var(--muted)}
+
+/* STEP PROGRESS */
+.step-bar{display:flex;justify-content:center;align-items:center;gap:0;padding:1.2rem 1.5rem;background:#fff;border-bottom:1px solid var(--border);overflow-x:auto}
+.step-item{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:70px;cursor:pointer;opacity:0.4;transition:opacity 0.2s}
+.step-item.active{opacity:1}
+.step-item.done{opacity:0.7}
+.step-num{width:28px;height:28px;border-radius:50%;border:2px solid var(--step-inactive);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:600;background:#fff;transition:all 0.3s}
+.step-item.active .step-num{border-color:var(--text);background:var(--text);color:#fff}
+.step-item.done .step-num{border-color:var(--cool);background:var(--cool);color:#fff}
+.step-label{font-size:0.7rem;color:var(--muted);white-space:nowrap}
+.step-divider{width:32px;height:2px;background:var(--border);flex-shrink:0;margin-bottom:20px}
+
+/* CONTAINER */
+.container{max-width:800px;margin:0 auto;padding:2rem 1.5rem 4rem}
+
+/* GUIDE SECTION */
+.guide-intro{text-align:center;margin-bottom:2rem}
+.guide-intro h2{font-family:'Noto Serif SC',serif;font-size:1.4rem;margin-bottom:0.5rem}
+.guide-intro p{color:var(--muted);font-size:0.9rem;max-width:480px;margin:0 auto}
+
+.guide-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-bottom:1.5rem}
+.guide-item{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.2rem 1.4rem}
+.guide-item .gi-icon{font-size:1.5rem;margin-bottom:0.5rem}
+.guide-item h4{font-size:0.9rem;font-weight:600;margin-bottom:0.3rem}
+.guide-item p{font-size:0.82rem;color:var(--muted);line-height:1.7}
+
+.dim-intro{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.4rem 1.6rem;margin-bottom:1.5rem}
+.dim-intro h4{font-size:0.95rem;font-weight:600;margin-bottom:0.8rem}
+.dim-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem}
+.dim-item{display:flex;align-items:flex-start;gap:8px;font-size:0.82rem;line-height:1.5}
+.dim-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:5px}
+
+.start-btn{display:block;width:100%;max-width:320px;margin:0 auto;padding:14px 24px;background:var(--text);color:#fff;border:none;border-radius:10px;font-size:1rem;font-family:'Noto Sans SC',sans-serif;font-weight:500;cursor:pointer;letter-spacing:0.05em;transition:opacity 0.2s}
+.start-btn:hover{opacity:0.85}
+
+/* STAGE SECTION */
+.stage-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem}
+.stage-card{background:var(--card);border:2px solid var(--border);border-radius:12px;padding:1.2rem;cursor:pointer;transition:all 0.2s;text-align:center}
+.stage-card:hover{border-color:#aaa}
+.stage-card.selected{border-color:var(--text);background:#f5f3ee}
+.stage-card h3{font-size:0.95rem;font-weight:600;margin-bottom:0.3rem}
+.stage-card .age{font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem}
+.stage-card p{font-size:0.78rem;color:var(--muted);line-height:1.5}
+.stage-hint{background:#fff8f0;border:1px solid #f0d8c0;border-radius:10px;padding:1rem 1.2rem;font-size:0.85rem;line-height:1.7;margin-bottom:1.5rem;display:none}
+.stage-hint.show{display:block}
+
+/* QUIZ SECTION */
+.quiz-progress{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;font-size:0.82rem;color:var(--muted)}
+.quiz-bar-wrap{flex:1;height:4px;background:var(--border);border-radius:2px;margin:0 1rem;overflow:hidden}
+.quiz-bar{height:100%;background:var(--text);border-radius:2px;transition:width 0.4s ease}
+
+.dim-section{margin-bottom:2rem}
+.dim-header{display:flex;align-items:center;gap:10px;margin-bottom:0.8rem}
+.dim-color{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.dim-header h3{font-size:0.95rem;font-weight:600}
+.dim-header .dim-sub{font-size:0.78rem;color:var(--muted);margin-left:4px}
+
+.question-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem 1.2rem;margin-bottom:0.7rem}
+.question-text{font-size:0.88rem;margin-bottom:0.8rem;line-height:1.6}
+.q-options{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.q-opt{padding:7px 4px;text-align:center;border:1.5px solid var(--border);border-radius:7px;font-size:0.75rem;cursor:pointer;transition:all 0.15s;line-height:1.3;color:var(--muted)}
+.q-opt:hover{border-color:#aaa;color:var(--text)}
+.q-opt.selected{border-color:var(--text);background:var(--text);color:#fff}
+
+/* RESULT SECTION */
+.result-top{display:flex;flex-wrap:wrap;gap:1.5rem;align-items:flex-start;margin-bottom:2rem}
+.radar-wrap{flex:1;min-width:280px;max-width:380px}
+.legend-row{display:flex;gap:1.2rem;justify-content:center;margin-top:0.5rem;font-size:0.75rem;color:var(--muted);flex-wrap:wrap}
+.legend-row span{display:flex;align-items:center;gap:4px}
+.legend-sq{width:9px;height:9px;border-radius:2px}
+.score-list{flex:1;min-width:220px}
+.score-row{display:flex;align-items:center;gap:10px;margin-bottom:0.7rem;font-size:0.85rem}
+.score-label{min-width:50px;display:flex;align-items:center;gap:6px}
+.score-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.score-bar-wrap{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.score-bar{height:100%;border-radius:3px;transition:width 0.6s ease}
+.score-val{min-width:36px;text-align:right;font-weight:500}
+
+.insight-section h3{font-family:'Noto Serif SC',serif;font-size:1.05rem;margin-bottom:1rem}
+.insight{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem 1.2rem;margin-bottom:0.8rem;font-size:0.875rem;line-height:1.8}
+.tag{display:inline-block;font-size:0.7rem;padding:2px 8px;border-radius:4px;margin-right:6px;font-weight:500;vertical-align:middle}
+.tag-upper{background:rgba(72,145,199,0.12);color:#2060a0}
+.tag-lower{background:rgba(99,153,34,0.12);color:#3b6d11}
+.tag-bridge{background:rgba(216,90,48,0.1);color:#993c1d}
+.tag-ok{background:rgba(29,158,117,0.1);color:#126b50}
+
+.action-row{display:flex;gap:1rem;margin-top:2rem;flex-wrap:wrap}
+.btn-sec{padding:11px 20px;border-radius:8px;font-size:0.88rem;font-family:'Noto Sans SC',sans-serif;cursor:pointer;border:1.5px solid var(--border);background:var(--card);color:var(--text);transition:all 0.2s}
+.btn-sec:hover{border-color:#aaa}
+.btn-pri{padding:11px 20px;border-radius:8px;font-size:0.88rem;font-family:'Noto Sans SC',sans-serif;cursor:pointer;border:none;background:var(--text);color:#fff;transition:opacity 0.2s}
+.btn-pri:hover{opacity:0.85}
+
+.footer-note{text-align:center;font-size:0.72rem;color:var(--muted);margin-top:3rem;padding-top:1rem;border-top:1px solid var(--border)}
+
+/* NAV BUTTONS */
+.nav-row{display:flex;justify-content:space-between;margin-top:2rem}
+.hidden{display:none!important}
+
+/* sections */
+.section{display:none}
+.section.active{display:block}
+
+svg text{font-family:'Noto Sans SC',sans-serif}
+
+@media(max-width:500px){
+  .q-options{grid-template-columns:1fr 1fr}
+  .stage-grid{grid-template-columns:1fr}
+  .dim-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>辩 证 雷 达</h1>
+  <p class="subtitle">家长观察与陪伴工具 · 通过情景问题生成孩子的思维能力画像</p>
+</div>
+
+<!-- STEP BAR -->
+<div class="step-bar">
+  <div class="step-item active" id="step1">
+    <div class="step-num">1</div>
+    <div class="step-label">使用说明</div>
+  </div>
+  <div class="step-divider"></div>
+  <div class="step-item" id="step2">
+    <div class="step-num">2</div>
+    <div class="step-label">选择学段</div>
+  </div>
+  <div class="step-divider"></div>
+  <div class="step-item" id="step3">
+    <div class="step-num">3</div>
+    <div class="step-label">回答问卷</div>
+  </div>
+  <div class="step-divider"></div>
+  <div class="step-item" id="step4">
+    <div class="step-num">4</div>
+    <div class="step-label">查看结果</div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ===== SECTION 1: GUIDE ===== -->
+<div class="section active" id="sec-guide">
+  <div class="guide-intro">
+    <h2>这个工具是做什么的？</h2>
+    <p>通过回答24道日常情景观察题，为孩子生成一张六维思维能力雷达图，帮助家长找到亲子沟通的切入点。</p>
+  </div>
+
+  <div class="guide-grid">
+    <div class="guide-item">
+      <div class="gi-icon">🕐</div>
+      <h4>大约需要多久</h4>
+      <p>回答24道情景题，约需 5-8 分钟。建议在安静时完成，不要边想边做别的事。</p>
+    </div>
+    <div class="guide-item">
+      <div class="gi-icon">👀</div>
+      <h4>怎样回答最准</h4>
+      <p>基于你近 1-2 个月观察到的情况，不追求"理想答案"，选最真实的那个。</p>
+    </div>
+    <div class="guide-item">
+      <div class="gi-icon">📅</div>
+      <h4>多久测一次</h4>
+      <p>建议每 4-6 周重测一次，关注趋势变化，而非单次分数高低。</p>
+    </div>
+    <div class="guide-item">
+      <div class="gi-icon">💬</div>
+      <h4>结果怎么用</h4>
+      <p>可截图雷达图与老师、教育机构沟通，用"我观察到"代替"我觉得"。</p>
+    </div>
+  </div>
+
+  <div class="dim-intro">
+    <h4>雷达的六个维度（两两辩证对立）</h4>
+    <div class="dim-grid">
+      <div class="dim-item">
+        <div class="dim-dot" style="background:#4891C7"></div>
+        <div><strong>介入力</strong> — 主动参与、提问、发起讨论的意愿<br><span style="color:var(--muted)">← 对立 →</span></div>
+      </div>
+      <div class="dim-item">
+        <div class="dim-dot" style="background:#1D9E75"></div>
+        <div><strong>抽象力</strong> — 从具体事物中提炼规律、理解符号</div>
+      </div>
+      <div class="dim-item">
+        <div class="dim-dot" style="background:#5DAA68"></div>
+        <div><strong>协同力</strong> — 倾听他人、协作配合、达成共识<br><span style="color:var(--muted)">← 对立 →</span></div>
+      </div>
+      <div class="dim-item">
+        <div class="dim-dot" style="background:#D85A30"></div>
+        <div><strong>创造力</strong> — 提出新想法、变换角度、打破常规</div>
+      </div>
+      <div class="dim-item">
+        <div class="dim-dot" style="background:#E8A838"></div>
+        <div><strong>表达力</strong> — 用语言、动作或作品清晰传递想法<br><span style="color:var(--muted)">← 对立 →</span></div>
+      </div>
+      <div class="dim-item">
+        <div class="dim-dot" style="background:#8B6BB5"></div>
+        <div><strong>反思力</strong> — 回顾自己的思考过程、评价与修正</div>
+      </div>
+    </div>
+  </div>
+
+  <button class="start-btn" onclick="goTo('stage')">开始观察 →</button>
+</div>
+
+<!-- ===== SECTION 2: STAGE ===== -->
+<div class="section" id="sec-stage">
+  <div style="margin-bottom:1.5rem">
+    <h2 style="font-family:'Noto Serif SC',serif;font-size:1.3rem;margin-bottom:0.4rem">孩子现在是哪个学段？</h2>
+    <p style="font-size:0.85rem;color:var(--muted)">学段影响各维度的发展基准，请据实选择</p>
+  </div>
+
+  <div class="stage-grid">
+    <div class="stage-card" data-stage="low" onclick="selectStage('low',this)">
+      <h3>低年级</h3>
+      <div class="age">1-2年级 / 约7-8岁</div>
+      <p>感官整合期，外向性维度较活跃，内向性尚在萌芽</p>
+    </div>
+    <div class="stage-card" data-stage="mid" onclick="selectStage('mid',this)">
+      <h3>中年级</h3>
+      <div class="age">3-4年级 / 约9-10岁</div>
+      <p>形象思维向抽象逻辑过渡，补板黄金期</p>
+    </div>
+    <div class="stage-card" data-stage="high" onclick="selectStage('high',this)">
+      <h3>高年级</h3>
+      <div class="age">5-6年级 / 约11-12岁</div>
+      <p>神经剪枝期，六维趋于均衡，关注自主闭环</p>
+    </div>
+  </div>
+
+  <div class="stage-hint" id="stageHintBox"></div>
+
+  <div class="nav-row">
+    <button class="btn-sec" onclick="goTo('guide')">← 返回</button>
+    <button class="btn-pri" id="stageNextBtn" onclick="goTo('quiz')" disabled style="opacity:0.4;cursor:not-allowed">下一步：开始问卷 →</button>
+  </div>
+</div>
+
+<!-- ===== SECTION 3: QUIZ ===== -->
+<div class="section" id="sec-quiz">
+  <div class="quiz-progress">
+    <span id="quizCountText">0 / 24 题</span>
+    <div class="quiz-bar-wrap"><div class="quiz-bar" id="quizBar" style="width:0%"></div></div>
+    <span id="quizPctText">0%</span>
+  </div>
+  <div id="quizContent"></div>
+  <div class="nav-row">
+    <button class="btn-sec" onclick="goTo('stage')">← 重选学段</button>
+    <button class="btn-pri" id="quizSubmitBtn" onclick="submitQuiz()" style="opacity:0.4;cursor:not-allowed" disabled>生成雷达图 →</button>
+  </div>
+</div>
+
+<!-- ===== SECTION 4: RESULT ===== -->
+<div class="section" id="sec-result">
+  <div style="text-align:center;margin-bottom:1.5rem">
+    <div style="font-size:0.78rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:0.3rem">观察报告</div>
+    <h2 style="font-family:'Noto Serif SC',serif;font-size:1.4rem" id="resultTitle">孩子的思维能力画像</h2>
+  </div>
+
+  <div class="result-top">
+    <div class="radar-wrap">
+      <svg id="radarSvg" viewBox="0 0 400 380" width="100%"></svg>
+      <div class="legend-row">
+        <span><span class="legend-sq" style="background:rgba(72,145,199,0.8)"></span>外向性</span>
+        <span><span class="legend-sq" style="background:rgba(99,153,34,0.8)"></span>内向性</span>
+        <span><span class="legend-sq" style="background:#bbb;opacity:0.6"></span>学段基准</span>
+      </div>
+    </div>
+    <div class="score-list" id="scoreList"></div>
+  </div>
+
+  <div class="insight-section">
+    <h3>观察解读</h3>
+    <div id="insightText"></div>
+  </div>
+
+  <div class="action-row">
+    <button class="btn-sec" onclick="goTo('quiz')">← 修改答题</button>
+    <button class="btn-sec" onclick="window.print()">🖨 打印/保存</button>
+    <button class="btn-pri" onclick="resetAll()">重新观察</button>
+  </div>
+</div>
+
+</div><!-- end container -->
+
+<div class="footer-note" style="max-width:800px;margin:0 auto;padding:0 1.5rem 2rem">
+  辩证雷达 v3.0 · 综合参考 NJTRS、CCTST 等儿童思维评估框架 · 仅作家庭观察参考，不构成诊断
+</div>
+
+<script>
+const dims = [
+  {key:'intervention', label:'介入力', color:'#4891C7', angle:-90, half:'upper', desc:'主动参与、提问、发起讨论'},
+  {key:'cooperation', label:'协同力', color:'#5DAA68', angle:-30, half:'upper', desc:'倾听协作、达成共识'},
+  {key:'expression', label:'表达力', color:'#E8A838', angle:30, half:'upper', desc:'清晰传递想法与感受'},
+  {key:'abstraction', label:'抽象力', color:'#1D9E75', angle:90, half:'lower', desc:'提炼规律、理解符号模型'},
+  {key:'creativity', label:'创造力', color:'#D85A30', angle:150, half:'lower', desc:'新想法、变换角度'},
+  {key:'reflection', label:'反思力', color:'#8B6BB5', angle:210, half:'lower', desc:'回顾过程、评价修正'}
+];
+
+const stageInfo = {
+  low: {
+    label:'低年级（1-2年级）',
+    hint:'此阶段大脑处于"感官整合期"，学习高度依赖情绪和具象感知。外向性维度（介入力、协同力、表达力）通常更为活跃，内向性维度尚在萌芽——属正常发展节律，不必急于补短板。',
+    weights:{intervention:1, cooperation:0.8, expression:1, abstraction:0.5, creativity:0.7, reflection:0.4}
+  },
+  mid: {
+    label:'中年级（3-4年级）',
+    hint:'胼胝体大幅加厚，左右脑信息传递提速，是形象思维向抽象逻辑思维过渡的黄金期。抽象力和反思力应出现明显提升，是"补板"的最佳窗口。',
+    weights:{intervention:0.9, cooperation:0.9, expression:0.9, abstraction:0.9, creativity:0.9, reflection:0.8}
+  },
+  high: {
+    label:'高年级（5-6年级）',
+    hint:'进入"神经剪枝期"，前额叶皮层接管全局。六维能力趋于均衡发展，尤其关注反思力和抽象力是否形成自主闭环——这是独立学习的核心能力。',
+    weights:{intervention:1, cooperation:1, expression:1, abstraction:1, creativity:1, reflection:1}
+  }
+};
+
+// QUESTIONS: 4 per dimension
+const questions = [
+  // 介入力
+  {dim:'intervention', q:'在家讨论一个新话题时（比如看完纪录片或新闻），孩子是否会主动提问或发表看法？', opts:['几乎不会','偶尔会','经常会','主动且热烈']},
+  {dim:'intervention', q:'在与其他孩子玩耍或学习时，孩子是否愿意主动开口说出自己的想法？', opts:['很被动','需要鼓励','通常会','很主动']},
+  {dim:'intervention', q:'孩子在不理解某件事时，是否会主动来找你问"为什么"？', opts:['很少问','有时候会','比较频繁','非常频繁']},
+  {dim:'intervention', q:'在集体活动或家庭游戏中，孩子是否愿意率先尝试、带动场面？', opts:['总是退缩','有时参与','乐于参与','喜欢主导']},
+  // 协同力
+  {dim:'cooperation', q:'在需要轮流发言或等待的游戏/活动中，孩子能否做到耐心等待、听别人说完？', opts:['很难做到','需要提醒','基本能做','非常耐心']},
+  {dim:'cooperation', q:'当孩子与同伴意见不同时，他/她是否能听对方的想法、尝试找到共同点？', opts:['坚持己见','需要引导','能够倾听','善于协调']},
+  {dim:'cooperation', q:'在小组任务或家庭合作中，孩子是否能主动承担分工、配合他人？', opts:['经常推脱','偶尔配合','积极配合','乐于分工']},
+  {dim:'cooperation', q:'孩子在和朋友或家人产生分歧时，处理方式通常是？', opts:['生气离开','委屈配合','平和沟通','主动和解']},
+  // 表达力
+  {dim:'expression', q:'孩子讲述一件发生过的事情时，表达是否清晰、有逻辑顺序？', opts:['很混乱','大致能懂','比较清晰','条理清晰']},
+  {dim:'expression', q:'当孩子心里有想法或感受时，他/她是否能用语言或其他方式（画画、动作）表达出来？', opts:['很难表达','需要启发','能够表达','表达生动']},
+  {dim:'expression', q:'孩子在向你解释一道题或一件事的做法时，是否能让你听懂？', opts:['很难理解','需要追问','基本能懂','表达清楚']},
+  {dim:'expression', q:'孩子是否有用语言描述自己情绪的习惯（如"我今天很开心是因为……"）？', opts:['从不这样','偶尔有','经常有','习惯如此']},
+  // 抽象力
+  {dim:'abstraction', q:'孩子能否理解"数量关系"之类的抽象概念，比如将多个积木分组找规律？', opts:['很困难','需要帮助','基本能做','轻松理解']},
+  {dim:'abstraction', q:'在讲故事或读书时，孩子是否能说出这个故事"想说明什么道理"？', opts:['说不出来','需要提示','有时能说','常有见解']},
+  {dim:'abstraction', q:'孩子是否能把两件不相关的事物找到相同点？（如把"鸟飞翔"和"飞机起飞"类比）', opts:['很少这样','偶尔会','经常能','喜欢类比']},
+  {dim:'abstraction', q:'学习新规则（如棋类游戏规则、数学公式）时，孩子理解的速度？', opts:['很慢很难','需要多次','中等速度','理解较快']},
+  // 创造力
+  {dim:'creativity', q:'孩子在玩玩具或游戏时，是否经常想出新玩法或改变原有规则？', opts:['按规则玩','偶尔改变','常有新玩法','非常喜欢创新']},
+  {dim:'creativity', q:'孩子在面对一道题有多种解法时，是否会主动想"还有没有其他方法"？', opts:['不会想','偶尔想','经常想','习惯多想']},
+  {dim:'creativity', q:'孩子在日常中是否会提出一些让你意想不到的问题或想法？', opts:['很少','偶尔','时常','经常让你惊喜']},
+  {dim:'creativity', q:'当计划遇到障碍或变化时，孩子能否快速想出替代方案？', opts:['容易放弃','需要帮助','能想出来','想法很多']},
+  // 反思力
+  {dim:'reflection', q:'做完一件事（如一道题、一个手工）后，孩子是否会主动评价"做得好不好"？', opts:['不会想','偶尔会','经常会','习惯如此']},
+  {dim:'reflection', q:'当孩子做错了题或犯了错，他/她能否说出"哪里错了、为什么错"？', opts:['说不出来','需要引导','基本能说','能深入分析']},
+  {dim:'reflection', q:'孩子是否会在做事前先想"怎么做更好"，而不是立刻动手？', opts:['从不','偶尔','有时会','经常规划']},
+  {dim:'reflection', q:'孩子在听完批评或建议后，下次是否真的会做出调整？', opts:['很少改变','有时调整','通常会改','积极改进']}
+];
+
+const stageHints = {
+  low:'低年级（1-2年级，7-8岁）— 感官整合期',
+  mid:'中年级（3-4年级，9-10岁）— 思维过渡期',
+  high:'高年级（5-6年级，11-12岁）— 自主闭环期'
+};
+
+let currentStage = null;
+let answers = {}; // q index -> score 1-4
+
+function goTo(section){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+section).classList.add('active');
+  // update steps
+  const stepMap = {guide:1,stage:2,quiz:3,result:4};
+  const cur = stepMap[section];
+  [1,2,3,4].forEach(i=>{
+    const el = document.getElementById('step'+i);
+    el.classList.remove('active','done');
+    if(i===cur) el.classList.add('active');
+    else if(i<cur) el.classList.add('done');
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(section==='quiz') buildQuiz();
+  if(section==='result') buildResult();
+}
+
+function selectStage(s, el){
+  currentStage = s;
+  document.querySelectorAll('.stage-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  const hint = document.getElementById('stageHintBox');
+  hint.textContent = stageInfo[s].hint;
+  hint.classList.add('show');
+  const btn = document.getElementById('stageNextBtn');
+  btn.disabled = false;
+  btn.style.opacity = '1';
+  btn.style.cursor = 'pointer';
+}
+
+function buildQuiz(){
+  const c = document.getElementById('quizContent');
+  c.innerHTML = '';
+  // group by dim
+  dims.forEach(dim=>{
+    const qs = questions.filter(q=>q.dim===dim.key);
+    const sec = document.createElement('div');
+    sec.className = 'dim-section';
+    sec.innerHTML = `<div class="dim-header"><div class="dim-color" style="background:${dim.color}"></div><h3>${dim.label}</h3><span class="dim-sub">${dim.desc}</span></div>`;
+    qs.forEach((q,qi)=>{
+      const idx = questions.indexOf(q);
+      const card = document.createElement('div');
+      card.className = 'question-card';
+      const optsHtml = q.opts.map((o,oi)=>`<div class="q-opt ${answers[idx]===oi+1?'selected':''}" onclick="selectOpt(${idx},${oi+1},this)">${o}</div>`).join('');
+      card.innerHTML = `<div class="question-text">${qs.indexOf(q)+1}. ${q.q}</div><div class="q-options">${optsHtml}</div>`;
+      sec.appendChild(card);
+    });
+    c.appendChild(sec);
+  });
+  updateQuizProgress();
+}
+
+function selectOpt(idx, val, el){
+  answers[idx] = val;
+  // update UI for this question
+  el.closest('.q-options').querySelectorAll('.q-opt').forEach(o=>o.classList.remove('selected'));
+  el.classList.add('selected');
+  updateQuizProgress();
+}
+
+function updateQuizProgress(){
+  const total = questions.length;
+  const done = Object.keys(answers).length;
+  document.getElementById('quizCountText').textContent = `${done} / ${total} 题`;
+  const pct = Math.round(done/total*100);
+  document.getElementById('quizPctText').textContent = pct+'%';
+  document.getElementById('quizBar').style.width = pct+'%';
+  const btn = document.getElementById('quizSubmitBtn');
+  if(done >= total){
+    btn.disabled = false; btn.style.opacity='1'; btn.style.cursor='pointer';
+  } else {
+    btn.disabled = true; btn.style.opacity='0.4'; btn.style.cursor='not-allowed';
+  }
+}
+
+function calcScores(){
+  const scores = {};
+  dims.forEach(d=>{ scores[d.key] = 0; });
+  dims.forEach(dim=>{
+    const qs = questions.filter(q=>q.dim===dim.key);
+    let sum = 0;
+    qs.forEach(q=>{
+      const idx = questions.indexOf(q);
+      sum += (answers[idx]||1);
+    });
+    // scale: 4 questions x max 4 = 16 → map to 1-8
+    scores[dim.key] = Math.round(sum / qs.length * 2);
+    scores[dim.key] = Math.max(1,Math.min(8, scores[dim.key]));
+  });
+  return scores;
+}
+
+function submitQuiz(){
+  goTo('result');
+}
+
+function buildResult(){
+  const scores = calcScores();
+  drawRadar(scores);
+  buildScoreList(scores);
+  buildInsights(scores);
+  document.getElementById('resultTitle').textContent = stageInfo[currentStage].label + ' · 思维能力画像';
+}
+
+function drawRadar(scores){
+  const svg = document.getElementById('radarSvg');
+  const cx=200, cy=185, R=140;
+  let html = '';
+  // grid
+  for(let lv=1;lv<=8;lv++){
+    const r = R*lv/8;
+    const pts = dims.map((_,i)=>{const a=(i*60-90)*Math.PI/180;return `${cx+r*Math.cos(a)},${cy+r*Math.sin(a)}`;}).join(' ');
+    html += `<polygon points="${pts}" fill="none" stroke="#ddd" stroke-width="${lv===4?'1.2':'0.5'}" ${lv===4?'stroke-dasharray="4,3"':''}/>`;
+  }
+  dims.forEach((_,i)=>{const a=(i*60-90)*Math.PI/180;html+=`<line x1="${cx}" y1="${cy}" x2="${cx+R*Math.cos(a)}" y2="${cy+R*Math.sin(a)}" stroke="#ccc" stroke-width="0.5"/>`;});
+  // weight reference
+  const wts = stageInfo[currentStage].weights;
+  const refPts = dims.map((d,i)=>{const a=(i*60-90)*Math.PI/180;const r=R*(wts[d.key]*8)/8;return `${cx+r*Math.cos(a)},${cy+r*Math.sin(a)}`;}).join(' ');
+  html += `<polygon points="${refPts}" fill="none" stroke="#bbb" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.6"/>`;
+  // filled polygon
+  const pts = dims.map((d,i)=>{const a=(i*60-90)*Math.PI/180;const r=R*scores[d.key]/8;return `${cx+r*Math.cos(a)},${cy+r*Math.sin(a)}`;}).join(' ');
+  html += `<polygon points="${pts}" fill="rgba(72,145,199,0.07)" stroke="none"/>`;
+  // edges
+  dims.forEach((d,i)=>{
+    const a1=(i*60-90)*Math.PI/180;
+    const a2=((i+1)*60-90)*Math.PI/180;
+    const r1=R*scores[d.key]/8;
+    const nd=dims[(i+1)%6];
+    const r2=R*scores[nd.key]/8;
+    const x1=cx+r1*Math.cos(a1),y1=cy+r1*Math.sin(a1);
+    const x2=cx+r2*Math.cos(a2),y2=cy+r2*Math.sin(a2);
+    const ec=d.half==='upper'&&nd.half==='upper'?'rgba(72,145,199,0.85)':d.half==='lower'&&nd.half==='lower'?'rgba(99,153,34,0.85)':'#aaa';
+    html+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${ec}" stroke-width="2.5"/>`;
+  });
+  // dots + labels
+  dims.forEach((d,i)=>{
+    const a=(i*60-90)*Math.PI/180;
+    const r=R*scores[d.key]/8;
+    const x=cx+r*Math.cos(a),y=cy+r*Math.sin(a);
+    html+=`<circle cx="${x}" cy="${y}" r="5" fill="${d.color}" stroke="#fff" stroke-width="2"/>`;
+    const lx=cx+(R+28)*Math.cos(a),ly=cy+(R+28)*Math.sin(a);
+    const anchor=Math.abs(Math.cos(a))<0.3?'middle':Math.cos(a)>0?'start':'end';
+    html+=`<text x="${lx}" y="${ly}" text-anchor="${anchor}" dominant-baseline="central" font-size="13" font-weight="500" fill="${d.color}">${d.label}</text>`;
+    html+=`<text x="${lx}" y="${ly+16}" text-anchor="${anchor}" dominant-baseline="central" font-size="10" fill="#999">${scores[d.key]}/8</text>`;
+  });
+  html+=`<line x1="${cx-R-15}" y1="${cy}" x2="${cx+R+15}" y2="${cy}" stroke="#ccc" stroke-width="0.5" stroke-dasharray="3,3"/>`;
+  html+=`<text x="${cx-R-12}" y="${cy-8}" font-size="9" fill="#bbb" text-anchor="end">外向性↑</text>`;
+  html+=`<text x="${cx-R-12}" y="${cy+14}" font-size="9" fill="#bbb" text-anchor="end">内向性↓</text>`;
+  svg.innerHTML = html;
+}
+
+function buildScoreList(scores){
+  const c = document.getElementById('scoreList');
+  c.innerHTML = '';
+  const wts = stageInfo[currentStage].weights;
+  dims.forEach(d=>{
+    const pct = (scores[d.key]/8*100).toFixed(0);
+    const row = document.createElement('div');
+    row.className = 'score-row';
+    row.innerHTML = `
+      <div class="score-label"><span class="score-dot" style="background:${d.color}"></span>${d.label}</div>
+      <div class="score-bar-wrap"><div class="score-bar" style="width:${pct}%;background:${d.color}"></div></div>
+      <div class="score-val" style="color:${d.color}">${scores[d.key]}<span style="font-size:0.72rem;color:var(--muted)">/8</span></div>
+    `;
+    c.appendChild(row);
+  });
+}
+
+function dimLevel(s){ return s<=2?'低':s<=4?'中低':s<=6?'中高':'高'; }
+
+const dimProfiles = {
+  intervention:{
+    low:`介入力偏低，孩子在需要主动参与的场合容易退缩或观望。这并不意味着孩子"内向"或能力不足，更可能是安全感还不够充分——在没有把握的情况下，沉默是一种自我保护策略。`,
+    midLow:`介入力处于发展阶段，孩子偶尔能主动参与，但稳定性还不够。在他/她感兴趣或熟悉的话题上能看到主动性，但遇到陌生场景会退缩。`,
+    midHigh:`介入力表现良好，孩子能在多数场合主动提问、表达看法。这种参与意愿是驱动学习的内在引擎，值得持续保护。`,
+    high:`介入力很强，孩子有主动探索和发起讨论的强烈意愿。注意引导他/她在主动的同时也留出空间给他人参与，避免无意中主导了所有对话。`,
+    nurture:`可以从低风险、小范围的场景开始练习：先在家庭内部做"今日一问"——每天晚饭时让孩子提一个他/她好奇的问题，任何问题都被欢迎。逐步扩展到和同学的互动，或课堂上的小组讨论。`,
+    caution:`当孩子主动发言后，注意第一反应的质量——"嗯，继续说"比"说错了"更能维持主动性。每一次参与尝试都应该让孩子感到安全。`
+  },
+  cooperation:{
+    low:`协同力偏低，孩子在集体任务中可能难以放慢自己的节奏去配合他人，或者对"必须听对方说完"感到不耐烦。这个阶段孩子往往更以自我为中心，还未形成"我们共同完成一件事"的意识。`,
+    midLow:`协同力在发展中，孩子能在被提醒后做到倾听和配合，但主动协作还不稳定。他/她可能在熟悉的小圈子里协作顺畅，但面对不熟悉的伙伴时会退回自我节奏。`,
+    midHigh:`协同力较好，孩子能在大多数情况下倾听他人、灵活配合。这种能力在日后的团队学习和社交中将是重要优势。`,
+    high:`协同力突出，孩子表现出良好的倾听习惯和团队意识。注意观察他/她在协作中是否有时过度妥协，忽略了表达自己的真实想法。`,
+    nurture:`可以设计"双向游戏"：孩子负责教你一个游戏，你故意犯一些规则上的"错误"，让孩子练习在纠正他人的同时保持耐心和方式。桌游、合作拼图等也是很好的协作训练场景。`,
+    caution:`协作冲突发生后，不急于评判谁对谁错，而是引导孩子复盘："对方当时在说什么？他/她想要的是什么？"——这种换位思考练习比说教更有效。`
+  },
+  expression:{
+    low:`表达力偏低，孩子心里可能有想法，但在组织语言、清晰表述方面有困难。有时表现为说话绕圈子、词不达意，或者干脆沉默选择不说。`,
+    midLow:`表达力在发展中，孩子能表达基本需求和感受，但在描述复杂想法或讲述有顺序的事情时还需要大人的引导和追问。`,
+    midHigh:`表达力较好，孩子能相对清晰地传递自己的想法和感受，对于多数日常情景都能让听者理解。`,
+    high:`表达力突出，孩子能生动、有逻辑地传递自己的想法，并能根据听众调整表达方式。这是未来写作、演讲、辩论的重要基础。`,
+    nurture:`每天可以做"三句话总结"练习：让孩子用三句话描述今天发生的一件事。不要打断，听完后再问一个追问，比如"最后怎么样了？"——这样既保护表达意愿，又温和地推动逻辑性。`,
+    caution:`当孩子表达混乱时，避免帮他/她"翻译"或直接代答——这会削减练习机会。可以说"你能换一种方式说说吗？"来鼓励重新组织。`
+  },
+  abstraction:{
+    low:`抽象力偏低，孩子目前更依赖具体的、可见的事物来理解世界，对于规律、模型和符号的感知还不稳定。这在低年级完全正常，随着前额叶发育会自然提升。`,
+    midLow:`抽象力在萌芽阶段，孩子能理解一些简单的规律，但在处理多层次的抽象概念（如数学推理、类比思维）时需要借助具体例子才能理解。`,
+    midHigh:`抽象力发展良好，孩子能从具体事物中提炼规律，对"这说明了什么"类的问题有自己的思考。`,
+    high:`抽象力很强，孩子能快速在事物之间建立联系，理解符号和模型。这是数学、科学以及哲学思维的核心引擎。`,
+    nurture:`可以玩"找相同"游戏：把生活中两件看似不相关的事物（如"蜘蛛网"和"地铁图"）放在一起，问孩子它们有什么共同点？答案没有对错，关键是培养跨类别联结的习惯。`,
+    caution:`遇到孩子理解不了抽象概念时，先回到具体操作：拿实物来演示，画图，或者用孩子熟悉的生活场景来类比——先"摸到"，再"悟到"。`
+  },
+  creativity:{
+    low:`创造力偏低，孩子目前倾向于按已有规则和方式行事，面对开放性问题时缺乏向外探索的驱动。这有时与环境有关——如果"犯错"或"不按套路"经常受到批评，孩子会本能地缩回安全范围。`,
+    midLow:`创造力处于积累期，孩子偶尔能想出新玩法或提出有趣的问题，但在系统性地"换角度思考"方面还不稳定。`,
+    midHigh:`创造力表现良好，孩子乐于尝试不同方式，对"还能怎么做"这类问题有探索欲。这种好奇心是未来创新能力的核心种子。`,
+    high:`创造力很强，孩子能主动突破常规，提出出人意料的想法或方案。注意帮助他/她在创意与执行之间建立桥梁，避免想法停留在脑中而难以落地。`,
+    nurture:`可以用"最坏的方案"游戏来松动思维：面对一个问题，先故意想出最荒谬的三个解决方法，再反过来讨论这些方法里有没有任何可取之处——这能打破"只有一种正确答案"的惯性。`,
+    caution:`当孩子提出"奇怪"想法时，第一反应不要是否定，而是追问"你是怎么想到的？"——这个问题本身就在告诉孩子：你的思维过程有价值。`
+  },
+  reflection:{
+    low:`反思力偏低，孩子还没有养成"看自己怎么想的"这个习惯。做完一件事就过去了，即使出错也较难主动找到原因。这在低年级很普遍，反思力需要在有安全感的环境中慢慢培育。`,
+    midLow:`反思力在发展中，孩子在被引导的情况下能说出"哪里不对""下次可以怎么改"，但主动反思还不是习惯，需要外部触发。`,
+    midHigh:`反思力较好，孩子能在完成任务后自我评估，对自己的思考过程有一定的觉察。`,
+    high:`反思力很强，孩子具备良好的元认知能力，能清晰描述自己"为什么这么想""哪里出了问题"。这是独立学习和持续进步的核心能力。`,
+    nurture:`可以一起建立"三步复盘"习惯，在做完任何事（一道题、一项手工、一次运动）后问：①我做对了什么？②哪里可以更好？③下次我打算怎么做？重要的是把这变成轻松的对话，而非审问。`,
+    caution:`反思力的培养最怕的是让孩子把"反思"等同于"认错"——如果每次反思都是指出错误，孩子会逐渐回避这个过程。要多引导对"做得好的部分"进行反思，才能形成积极的反思习惯。`
+  }
+};
+
+function getDimProfile(key, score){
+  const p = dimProfiles[key];
+  let main = score<=2?p.low:score<=4?p.midLow:score<=6?p.midHigh:p.high;
+  return {main, nurture:p.nurture, caution:p.caution};
+}
+
+function buildInsights(scores){
+  const panel = document.getElementById('insightText');
+  const wts = stageInfo[currentStage].weights;
+  let html = '';
+
+  // 1. Overall summary
+  const total = Object.values(scores).reduce((a,b)=>a+b,0);
+  const avg = (total/6).toFixed(1);
+  const upperAvg=((scores.intervention+scores.cooperation+scores.expression)/3).toFixed(1);
+  const lowerAvg=((scores.abstraction+scores.creativity+scores.reflection)/3).toFixed(1);
+  html += `<div class="insight"><span class="tag tag-ok">整体概览</span>六维平均得分 <strong>${avg}/8</strong>，外向性维度均值 ${upperAvg}，内向性维度均值 ${lowerAvg}。${parseFloat(upperAvg)>parseFloat(lowerAvg)+1.5?'孩子目前在外向性（参与、协作、表达）方面更为突出，内向性（抽象、创造、反思）仍在积累中。':parseFloat(lowerAvg)>parseFloat(upperAvg)+1.5?'孩子的内向性思维能力（抽象、创造、反思）表现相对突出，外向性（参与、协作、表达）还有提升空间。':'六个维度整体较为均衡，没有明显的单一突出或短板。'}</div>`;
+
+  // 2. Dialectical pair analysis
+  const pairs = [
+    {a:'intervention',b:'abstraction',desc:'外向的参与驱动力与内向的思维提炼力'},
+    {a:'cooperation',b:'creativity',desc:'与他人协调配合的能力与独立产出新想法的能力'},
+    {a:'expression',b:'reflection',desc:'向外输出想法的能力与向内审视思考的能力'}
+  ];
+  pairs.forEach(pair=>{
+    const dA=dims.find(d=>d.key===pair.a);
+    const dB=dims.find(d=>d.key===pair.b);
+    const diff=Math.abs(scores[pair.a]-scores[pair.b]);
+    if(diff>=3){
+      const high=scores[pair.a]>scores[pair.b]?dA:dB;
+      const low=scores[pair.a]>scores[pair.b]?dB:dA;
+      html+=`<div class="insight"><span class="tag tag-upper">辩证张力</span><strong>${high.label}（${scores[high.key]}分）↔ ${low.label}（${scores[low.key]}分）</strong>：这对维度代表"${pair.desc}"。两者差距达到 ${diff} 分，说明孩子在这一维度上发展不均衡。充沛的${high.label}是优势，但如果长期缺乏${low.label}的配合，可能出现"有冲劲但想不深"或"说得热闹但缺乏沉淀"的情况。建议在日常互动中有意识地为${low.label}创造练习机会，而不是直接纠正。</div>`;
+    } else if(diff<=1){
+      html+=`<div class="insight"><span class="tag tag-ok">辩证平衡</span><strong>${dA.label}（${scores[dA.key]}分）↔ ${dB.label}（${scores[dB.key]}分）</strong>：这对代表"${pair.desc}"的维度发展较为均衡，说明孩子在这两个方向上能够相互支撑，是思维发展健康的体现。</div>`;
+    }
+  });
+
+  // 3. Per-dimension profiles for all 6
+  html += `<div style="margin:1.2rem 0 0.5rem;font-weight:600;font-size:0.9rem;color:var(--text)">六个维度详细解读</div>`;
+  dims.forEach(d=>{
+    const s = scores[d.key];
+    const lv = dimLevel(s);
+    const profile = getDimProfile(d.key, s);
+    const tagClass = d.half==='upper'?'tag-upper':'tag-lower';
+    html+=`<div class="insight">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="width:10px;height:10px;border-radius:50%;background:${d.color};display:inline-block;flex-shrink:0"></span>
+        <strong style="color:${d.color}">${d.label}</strong>
+        <span class="tag ${tagClass}" style="margin-left:4px">${lv}水平 · ${s}/8</span>
+      </div>
+      <p style="margin-bottom:6px">${profile.main}</p>
+      <p style="color:#5a7a60;font-size:0.83rem"><strong>✦ 培育方向：</strong>${profile.nurture}</p>
+      <p style="color:#8a6040;font-size:0.83rem;margin-top:4px"><strong>⚑ 注意事项：</strong>${profile.caution}</p>
+    </div>`;
+  });
+
+  // 4. Bridge strategy for weakest
+  let weakest=null,weakVal=9;
+  dims.forEach(d=>{const adj=scores[d.key]/(wts[d.key]||1);if(adj<weakVal){weakVal=adj;weakest=d;}});
+  if(weakest){
+    const sameHalf=dims.filter(d=>d.half===weakest.half&&d.key!==weakest.key);
+    const bridges=sameHalf.filter(d=>scores[d.key]>=scores[weakest.key]+2);
+    if(bridges.length>0){
+      const bNames=bridges.map(b=>`<strong style="color:${b.color}">${b.label}</strong>`).join('和');
+      const bridgeDetails = {
+        abstraction:`先用 <strong>反思力</strong> 做"你刚才是怎么想的"引导，再用 <strong>创造力</strong> 游戏（如"用三种方式解释这个规律"）来增加抽象训练的趣味性。`,
+        creativity:`借助 <strong>反思力</strong> 引导"如果换个角度看呢？"，再通过 <strong>抽象力</strong> 的分类游戏来松动固化思路——先找规律，再打破规律。`,
+        reflection:`先用 <strong>创造力</strong> 做自由联想或角色扮演，让孩子在轻松状态下表达想法，再自然过渡到"你觉得刚才的选择好不好？为什么？"`,
+        intervention:`先在 <strong>协同力</strong> 场景（已有同伴的小组活动）中建立安全感，再通过 <strong>表达力</strong> 练习（讲一件今天的事）逐步激发主动参与的欲望。`,
+        cooperation:`借助 <strong>介入力</strong> 强的特点先做"小老师"角色（向你解释一件事），再引导他/她思考"如果换成我来听，我会怎么感受？"——从主动表达自然过渡到换位倾听。`,
+        expression:`通过 <strong>介入力</strong> 已有的好奇心驱动提问，在 <strong>协同力</strong> 的团队场景中创造"需要把想法说出来才能继续"的情境，让表达成为达成目标的工具。`
+      };
+      html+=`<div class="insight"><span class="tag tag-bridge">桥梁策略</span>综合来看，<strong style="color:${weakest.color}">${weakest.label}</strong> 是当前相对最需要关注的维度（学段调整后得分 ${scores[weakest.key]}/8）。同半轮的 ${bNames} 可以作为切入点：${bridgeDetails[weakest.key] || '利用已有优势创造自然的练习机会，避免单独训练薄弱维度。'}</div>`;
+    }
+  }
+
+  // 5. Stage-specific reminders
+  const stageUpperAvg=(scores.intervention+scores.cooperation+scores.expression)/3;
+  const stageLowerAvg=(scores.abstraction+scores.creativity+scores.reflection)/3;
+  if(currentStage==='low'&&stageLowerAvg<3){
+    html+=`<div class="insight"><span class="tag tag-lower">学段提醒</span>低年级（1-2年级）的内向性维度（抽象力、创造力、反思力）偏低，属于正常发展节律——这个阶段前额叶皮层尚在发育，孩子对世界的理解高度依赖情绪和感官体验。<strong>重点任务是保护"为什么"的好奇心，而不是急于提升分数。</strong>玩、问、感受——这本身就是最好的内向性培育。</div>`;
+  }
+  if(currentStage==='mid'&&Math.abs(stageUpperAvg-stageLowerAvg)>2){
+    html+=`<div class="insight"><span class="tag tag-upper">学段提醒</span>中年级（3-4年级）是胼胝体快速发育的关键期，左右脑信息传递速度显著提升，是从"形象思维"向"抽象逻辑思维"过渡的黄金窗口。当前外向与内向维度差距较大，<strong>建议把重点放在"元认知"培养上</strong>——引导孩子不只做题，而是能"讲出自己是怎么想的"，这个动作本身就在加固两侧的神经连接。</div>`;
+  }
+  if(currentStage==='high'&&scores.reflection<4){
+    html+=`<div class="insight"><span class="tag tag-lower">学段提醒</span>高年级（5-6年级）反思力偏低，可能影响独立学习能力的形成。这个阶段前额叶皮层开始接管决策，如果反思力未能同步发展，孩子可能对学习目标和方法缺乏自主感。<strong>建议逐步移交学习主权</strong>：让孩子自己制定当天学习计划，完成后自我评估，家长只在关键节点提问，而不是监督执行——这种结构能有效触发反思习惯。</div>`;
+  }
+
+  // 6. Always show stage context
+  html += `<div class="insight" style="background:#f9f7f4;border-color:#e8e4da"><span class="tag" style="background:#ece8e0;color:#666">学段发展背景</span>${stageInfo[currentStage].hint}每 4-6 周重新评估一次，关注各维度的<strong>变化趋势</strong>比单次得分更有意义。</div>`;
+
+  panel.innerHTML = html;
+}
+
+function resetAll(){
+  answers = {};
+  currentStage = null;
+  document.querySelectorAll('.stage-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('stageHintBox').classList.remove('show');
+  const btn = document.getElementById('stageNextBtn');
+  btn.disabled = true; btn.style.opacity='0.4'; btn.style.cursor='not-allowed';
+  goTo('guide');
+}
+</script>
+</body>
+</html>
